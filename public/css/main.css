@@ -1,3 +1,35 @@
 body {
+  margin: 0;
+  padding: 20px;
   background-color: #e8f3ec;
+  color: #333;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+}
+
+nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav li {
+  display: inline;
+  margin-right: 15px;
+}
+
+nav a {
+  color: #333;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+main {
+  max-width: 65ch;
 }
