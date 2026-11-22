@@ -1,14 +1,25 @@
-// Import necessary modules and set up the Express app
 import express from 'express';
 import { STATUS_CODES } from 'node:http';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// Get the current file name and directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Patient guides for preparing for the first visit, tracking therapist-assigned exercises, and discussing progress with the therapist.
+const patientResources = {
+  'first-visit': {
+    title: 'Preparing for your first visit',
+    description: 'Write down what brings you to therapy and any questions you want to ask.',
+  },
+  'home-program-log': {
+    title: 'Your home program after your visit',
+    description: 'Once your therapist assigns your home program, use a log to track the exercises you complete and any questions for your next visit.',
+  },
+};
 
 // Messages shown to users; technical error details stay in the terminal.
 const errorPages = {
@@ -24,11 +35,9 @@ const errorPages = {
   500: { title: 'Something went wrong', message: 'We couldn’t complete your request. Please try again later.' },
 };
 
-// Set up view engine and views directory
+// Configure EJS and serve static files from public.
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src', 'views'));
-
-// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -39,25 +48,29 @@ app.get('/about', (req, res) => {
   res.render('about', { title: 'About Mobility EHR' });
 });
 
-// Show the 404 page when no route matches.
+app.get('/resources', (req, res) => {
+  res.render('resources', { title: 'Patient Resources', patientResources });
+});
+
+// Handle 404 errors for unmatched routes.
 app.use((req, res, next) => {
   next(Object.assign(new Error('Route not found'), { status: 404 }));
 });
 
-// Express sends errors from routes and middleware to this four-argument handler.
-// For example, a form can call next(Object.assign(new Error('Invalid form data'), { status: 400 })).
+// Handle other errors.
 app.use((error, req, res, next) => {
-  const requestedStatus = error.status || error.statusCode;
-  const status = Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599
-    ? requestedStatus
-    : 500;
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const requestedStatus = error.status ?? error.statusCode;
+  let status = 500;
+  if (Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599) {
+    status = requestedStatus;
+  }
 
   if (status >= 500) {
     console.error(error);
-  }
-
-  if (res.headersSent) {
-    return next(error);
   }
 
   const { title, message } = errorPages[status] || {
@@ -66,15 +79,17 @@ app.use((error, req, res, next) => {
   };
   const view = status === 404 ? 'errors/404' : 'errors/error';
 
-  res.status(status).render(view, { status, title, message }, (renderError, html) => {
+  res.status(status).render(view, { title, status, message }, (renderError, html) => {
     if (renderError) {
       console.error(renderError);
       return res.status(500).type('text').send('Internal Server Error');
     }
+
     res.send(html);
   });
 });
 
+// Start the server.
 app.listen(port, (error) => {
   if (error) {
     console.error('Unable to start Mobility EHR:', error.message);
