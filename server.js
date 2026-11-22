@@ -49,7 +49,18 @@ app.get('/about', (req, res) => {
 });
 
 app.get('/resources', (req, res) => {
-  res.render('resources', { title: 'Patient Resources', patientResources });
+  res.render('resources/resources', { title: 'Patient Resources', patientResources });
+});
+
+app.get('/resources/:slug', (req, res, next) => {
+  const slug = req.params.slug;
+
+  if (!Object.hasOwn(patientResources, slug)) {
+    return next();
+  }
+
+  const resource = patientResources[slug];
+  res.render('resources/resource-detail', { title: resource.title, resource });
 });
 
 // Handle 404 errors for unmatched routes.
