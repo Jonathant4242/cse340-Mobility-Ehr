@@ -2,24 +2,13 @@ import express from 'express';
 import { STATUS_CODES } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resourceListPage, resourceDetailPage } from './src/controllers/resources/resources.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Patient guides for preparing for the first visit, tracking therapist-assigned exercises, and discussing progress with the therapist.
-const patientResources = {
-  'first-visit': {
-    title: 'Preparing for your first visit',
-    description: 'Write down what brings you to therapy and any questions you want to ask.',
-  },
-  'home-program-log': {
-    title: 'Your home program after your visit',
-    description: 'Once your therapist assigns your home program, use a log to track the exercises you complete and any questions for your next visit.',
-  },
-};
 
 // Messages shown to users; technical error details stay in the terminal.
 const errorPages = {
@@ -48,20 +37,9 @@ app.get('/about', (req, res) => {
   res.render('about', { title: 'About Mobility EHR' });
 });
 
-app.get('/resources', (req, res) => {
-  res.render('resources/resources', { title: 'Patient Resources', patientResources });
-});
+app.get('/resources', resourceListPage);
 
-app.get('/resources/:slug', (req, res, next) => {
-  const slug = req.params.slug;
-
-  if (!Object.hasOwn(patientResources, slug)) {
-    return next();
-  }
-
-  const resource = patientResources[slug];
-  res.render('resources/resource-detail', { title: resource.title, resource });
-});
+app.get('/resources/:slug', resourceDetailPage);
 
 // Handle 404 errors for unmatched routes.
 app.use((req, res, next) => {
